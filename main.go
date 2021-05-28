@@ -5,8 +5,17 @@ import (
 	"net/http"
 )
 
-func handlerFunc(w http.ResponseWriter, r *http.Request)  {
-	fmt.Fprintf(w, "<h1>Hello, 这里是 goblog</h1>")
+func handlerFunc(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/":
+		fmt.Fprintf(w, "<h1>Hello, 这里是 goblog</h1>")
+	case "/about":
+		fmt.Fprintf(w, "此博客是用以记录编程笔记，如您有反馈或建议，请联系 "+
+			"<a href=\"mailto:hyuiing@163.com\">hyuiing@163.com</a>")
+	default:
+		fmt.Fprint(w, "<h1>请求页面未找到 :(</h1>"+
+			"<p>如有疑惑，请联系我们。</p>")
+	}
 }
 
 func main() {
