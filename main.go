@@ -14,7 +14,7 @@ func handlerFunc(w http.ResponseWriter, r *http.Request) {
 			"<a href=\"mailto:hyuiing@163.com\">hyuiing@163.com</a>")
 	default:
 		fmt.Fprint(w, "<h1>请求页面未找到 :(</h1>"+
-			"<p>如有疑惑，请联系我们。</p>")
+			"<p>如有疑惑，请联系。</p>")
 	}
 }
 
