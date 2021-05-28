@@ -6,6 +6,7 @@ import (
 )
 
 func handlerFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html;charset=utf-8")
 	switch r.URL.Path {
 	case "/":
 		fmt.Fprintf(w, "<h1>Hello, 这里是 goblog</h1>")
