@@ -67,28 +67,6 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "body 的值为：%v <br>", body)
 		fmt.Fprintf(w, "body 的长度为：%v <br>", len(body))
 	} else {
-		html := `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<title>创建文章 —— 我的技术博客</title>
-	<style type="text/css">.error {color:red}</style>
-</head>
-<body>
-	<form action="{{ .URL }}" method="post">
-		<p><input type="text" name="title" value="{{ .Title }}"></p>
-		{{ with .Errors.title }}
-		<p class="error">{{ . }}</p>
-		{{ end }}
-		<p><textarea name="body" cols="30" rows="10">{{ .Body }}</textarea></p>
-		{{ with .Errors.body }}
-		<p class="error">{{ . }}</p>
-		{{ end }}
-		<p><button type="submit">提交</button></p>
-	</form>
-</body>
-</html>
-`
 		storeUrl, _ := router.Get("articles.store").URL()
 
 		data := ArticlesStoreData{
@@ -97,7 +75,7 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 			URL:    storeUrl,
 			Errors: errors,
 		}
-		tmpl, err := template.New("create-form").Parse(html)
+		tmpl, err := template.ParseFiles("resources/views/articles/create.gohtml")
 		if err != nil {
 			panic(err)
 		}
@@ -122,23 +100,22 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 }
 
 func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
-	html := `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<title>创建文章 —— 我的技术博客</title>
-</head>
-<body>
-	<form action="%s" method="post">
-		<p><input type="text" name="title"></p>
-		<p><textarea name="body" cols="30" rows="10"></textarea></p>
-		<p><button type="submit">提交</button></p>
-	</form>
-</body>
-</html>
-`
 	storeUrl, _ := router.Get("articles.store").URL()
-	fmt.Fprintf(w, html, storeUrl)
+	data := ArticlesStoreData{
+		Title:  "",
+		Body:   "",
+		URL:    storeUrl,
+		Errors: nil,
+	}
+
+	tmpl, err := template.ParseFiles("resources/views/articles/create.gohtml")
+	if err != nil {
+		fmt.Fprint(w, err)
+	}
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		fmt.Fprint(w, err)
+	}
 }
 
 func main() {
