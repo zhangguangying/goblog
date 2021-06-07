@@ -6,6 +6,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/zhangguangying/goblog/pkg/route"
 	"html/template"
 	"log"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 	"unicode/utf8"
 )
 
-var router = mux.NewRouter()
+var router *mux.Router
 var db *sql.DB
 
 type Article struct {
@@ -101,7 +102,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		tmpl, err := template.New("show.gohtml").Funcs(template.FuncMap{
-			"RouteName2URL": RouteName2URL,
+			"RouteName2URL": route.Name2URL,
 			"Int64ToString": Int64ToString,
 		}).
 			ParseFiles("resources/views/articles/show.gohtml")
@@ -350,6 +351,9 @@ func main() {
 	initDB()
 	createTables()
 
+	route.Initialize()
+	router = route.Router
+
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandler).Methods("GET").Name("about")
 
@@ -397,15 +401,6 @@ func articlesDeleteHandler(writer http.ResponseWriter, request *http.Request) {
 			}
 		}
 	}
-}
-
-func RouteName2URL(routeName string, pairs ...string) string {
-	url, err := router.Get(routeName).URL(pairs...)
-	if err != nil {
-		checkError(err)
-		return ""
-	}
-	return url.String()
 }
 
 func Int64ToString(num int64) string {
