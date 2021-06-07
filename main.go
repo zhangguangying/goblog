@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/zhangguangying/goblog/pkg/logger"
 	"github.com/zhangguangying/goblog/pkg/route"
+	"github.com/zhangguangying/goblog/pkg/types"
 	"html/template"
 	"log"
 	"net/http"
@@ -98,7 +99,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tmpl, err := template.New("show.gohtml").Funcs(template.FuncMap{
 			"RouteName2URL": route.Name2URL,
-			"Int64ToString": Int64ToString,
+			"Int64ToString": types.Int64ToString,
 		}).
 			ParseFiles("resources/views/articles/show.gohtml")
 		if err != nil {
@@ -391,8 +392,4 @@ func articlesDeleteHandler(writer http.ResponseWriter, request *http.Request) {
 			}
 		}
 	}
-}
-
-func Int64ToString(num int64) string {
-	return strconv.FormatInt(num, 10)
 }
