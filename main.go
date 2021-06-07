@@ -21,7 +21,16 @@ var db *sql.DB
 
 type Article struct {
 	Title, Body string
-	ID          int
+	ID          int64
+}
+
+func (a Article) Link() string {
+	showUrl, err := router.Get("articles.show").URL("id", strconv.FormatInt(a.ID, 10))
+	if err != nil {
+		checkError(err)
+		return ""
+	}
+	return showUrl.String()
 }
 
 func initDB() {
@@ -89,7 +98,25 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "访问文章列表")
+	rows, err := db.Query("SELECT * from articles")
+	checkError(err)
+	defer rows.Close()
+
+	var articles []Article
+	for rows.Next() {
+		var article Article
+		err := rows.Scan(&article.ID, &article.Title, &article.Body)
+		checkError(err)
+		articles = append(articles, article)
+	}
+
+	err = rows.Err()
+	checkError(err)
+
+	tmpl, err := template.ParseFiles("resources/views/articles/index.gohtml")
+	checkError(err)
+
+	tmpl.Execute(w, articles)
 }
 
 type ArticlesStoreData struct {
@@ -256,41 +283,52 @@ func validateArticleFormData(title, body string) map[string]string {
 }
 
 func articlesUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	title := r.PostFormValue("title")
-	body := r.PostFormValue("body")
-	errors := validateArticleFormData(title, body)
-
 	var article Article
 	id := getRouteVariable("id", r)
 
-	if len(errors) == 0 {
-		query := "update articles set title = ?,body = ? where id = ?"
-
-		rs, err := db.Exec(query, title, body, id)
-		if err != nil {
+	_, err := getArticleById(id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "404 文章未找到！")
+		} else {
 			checkError(err)
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "服务器内部错误")
-		}
-		if n, _ := rs.RowsAffected(); n > 0 {
-			showUrl, _ := router.Get("articles.show").URL("id", id)
-			http.Redirect(w, r, showUrl.String(), http.StatusFound)
-		} else {
-			fmt.Fprint(w, "您没有做任何更改")
+			fmt.Fprintf(w, "500 服务器内部错误")
 		}
 	} else {
-		url, _ := router.Get("articles.update").URL("id", id)
-		data := ArticlesStoreData{
-			Title:  article.Title,
-			Body:   article.Body,
-			URL:    url,
-			Errors: nil,
-		}
-		tmpl, err := template.ParseFiles("resources/views/articles/edit.gohtml")
-		checkError(err)
-		tmpl.Execute(w, data)
-	}
+		title := r.PostFormValue("title")
+		body := r.PostFormValue("body")
+		errors := validateArticleFormData(title, body)
 
+		if len(errors) == 0 {
+			query := "update articles set title = ?,body = ? where id = ?"
+
+			rs, err := db.Exec(query, title, body, id)
+			if err != nil {
+				checkError(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "500 服务器内部错误")
+			}
+			if n, _ := rs.RowsAffected(); n > 0 {
+				showUrl, _ := router.Get("articles.show").URL("id", id)
+				http.Redirect(w, r, showUrl.String(), http.StatusFound)
+			} else {
+				fmt.Fprint(w, "您没有做任何更改")
+			}
+		} else {
+			url, _ := router.Get("articles.update").URL("id", id)
+			data := ArticlesStoreData{
+				Title:  article.Title,
+				Body:   article.Body,
+				URL:    url,
+				Errors: nil,
+			}
+			tmpl, err := template.ParseFiles("resources/views/articles/edit.gohtml")
+			checkError(err)
+			tmpl.Execute(w, data)
+		}
+	}
 }
 
 func main() {
