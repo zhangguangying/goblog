@@ -33,6 +33,17 @@ func (a Article) Link() string {
 	return showUrl.String()
 }
 
+func (a Article) Delete() (rowsAffect int64, err error) {
+	rs, err := db.Exec("delete from articles where id = " + strconv.FormatInt(a.ID, 10))
+	if err != nil {
+		return 0, err
+	}
+	if n, _ := rs.RowsAffected(); n > 0 {
+		return n, nil
+	}
+	return 0, nil
+}
+
 func initDB() {
 	var err error
 	config := mysql.Config{
@@ -89,7 +100,11 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "服务器内部错误")
 		}
 	} else {
-		tmpl, err := template.ParseFiles("resources/views/articles/show.gohtml")
+		tmpl, err := template.New("show.gohtml").Funcs(template.FuncMap{
+			"RouteName2URL": RouteName2URL,
+			"Int64ToString": Int64ToString,
+		}).
+			ParseFiles("resources/views/articles/show.gohtml")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -345,10 +360,54 @@ func main() {
 	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
 	router.HandleFunc("/articles/{id:[0-9]+}/edit", articlesEditHandler).Methods("GET").Name("articles.edit")
 	router.HandleFunc("/articles/{id:[0-9]+}", articlesUpdateHandler).Methods("POST").Name("articles.update")
+	router.HandleFunc("/articles/{id:[0-9]+}/delete", articlesDeleteHandler).Methods("POST").Name("articles.delete")
 
 	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
 	router.Use(forceHTMLMiddleware)
 
 	http.ListenAndServe(":3000", removeTrailingSlash(router))
+}
+
+func articlesDeleteHandler(writer http.ResponseWriter, request *http.Request) {
+	id := getRouteVariable("id", request)
+	article, err := getArticleById(id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			writer.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(writer, "404 文章未找到")
+		} else {
+			checkError(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, "500 服务器内部错误")
+		}
+	} else {
+		rowsAffect, err := article.Delete()
+		if err != nil {
+			checkError(err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(writer, "500 服务器内部错误")
+		} else {
+			if rowsAffect > 0 {
+				indexUrl, _ := router.Get("articles.index").URL()
+				http.Redirect(writer, request, indexUrl.String(), http.StatusFound)
+			} else {
+				writer.WriteHeader(http.StatusNotFound)
+				fmt.Fprintf(writer, "404 文章未找到")
+			}
+		}
+	}
+}
+
+func RouteName2URL(routeName string, pairs ...string) string {
+	url, err := router.Get(routeName).URL(pairs...)
+	if err != nil {
+		checkError(err)
+		return ""
+	}
+	return url.String()
+}
+
+func Int64ToString(num int64) string {
+	return strconv.FormatInt(num, 10)
 }
