@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/zhangguangying/goblog/app/models/article"
 	"github.com/zhangguangying/goblog/pkg/logger"
@@ -21,6 +22,81 @@ type ArticlesStoreData struct {
 	Title, Body string
 	URL         string
 	Errors      map[string]string
+}
+
+func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
+	id := route.GetRouteVariable("id", r)
+	_article, err := article.Get(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "404 文章未找到！")
+		} else {
+			logger.LogError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "500 服务器内部错误")
+		}
+	} else {
+		title := r.PostFormValue("title")
+		body := r.PostFormValue("body")
+		errors := validateArticleFormData(title, body)
+
+		if len(errors) == 0 {
+			_article.Title = title
+			_article.Body = body
+
+			rs, err := _article.Update()
+			if err != nil {
+				logger.LogError(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "500 服务器内部错误")
+			}
+			if rs > 0 {
+				showUrl := route.Name2URL("articles.show", "id", id)
+				http.Redirect(w, r, showUrl, http.StatusFound)
+			} else {
+				fmt.Fprint(w, "您没有做任何更改")
+			}
+		} else {
+			url := route.Name2URL("articles.update", "id", id)
+			data := ArticlesStoreData{
+				Title:  _article.Title,
+				Body:   _article.Body,
+				URL:    url,
+				Errors: errors,
+			}
+			tmpl, err := template.ParseFiles("resources/views/articles/edit.gohtml")
+			logger.LogError(err)
+			tmpl.Execute(w, data)
+		}
+	}
+}
+
+func (*ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
+	id := route.GetRouteVariable("id", r)
+
+	article, err := article.Get(id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "文章不存在")
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Fatal(err)
+			fmt.Fprintf(w, "服务器内部错误")
+		}
+	} else {
+		url := route.Name2URL("articles.update", "id", id)
+		data := ArticlesStoreData{
+			Title:  article.Title,
+			Body:   article.Body,
+			URL:    url,
+			Errors: nil,
+		}
+		tmpl, err := template.ParseFiles("resources/views/articles/edit.gohtml")
+		logger.LogError(err)
+		tmpl.Execute(w, data)
+	}
 }
 
 func (*ArticlesController) Create(w http.ResponseWriter, r *http.Request) {
