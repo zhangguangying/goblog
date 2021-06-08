@@ -10,9 +10,89 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
+	"unicode/utf8"
 )
 
 type ArticlesController struct {
+}
+
+type ArticlesStoreData struct {
+	Title, Body string
+	URL         string
+	Errors      map[string]string
+}
+
+func (*ArticlesController) Create(w http.ResponseWriter, r *http.Request) {
+	storeUrl := route.Name2URL("articles.store")
+	data := ArticlesStoreData{
+		Title:  "",
+		Body:   "",
+		URL:    storeUrl,
+		Errors: nil,
+	}
+
+	tmpl, err := template.ParseFiles("resources/views/articles/create.gohtml")
+	if err != nil {
+		fmt.Fprint(w, err)
+	}
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		fmt.Fprint(w, err)
+	}
+}
+
+func validateArticleFormData(title, body string) map[string]string {
+	errors := make(map[string]string)
+
+	if title == "" {
+		errors["title"] = "标题不能为空"
+	} else if utf8.RuneCountInString(title) < 3 || utf8.RuneCountInString(title) > 40 {
+		errors["title"] = "标题长度需介于 3-40"
+	}
+	if body == "" {
+		errors["body"] = "内容不能为空"
+	} else if utf8.RuneCountInString(body) < 10 {
+		errors["body"] = "内容长度需大于等于 10 个字节"
+	}
+
+	return errors
+}
+
+func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
+	title := r.PostFormValue("title")
+	body := r.PostFormValue("body")
+
+	errors := validateArticleFormData(title, body)
+
+	if len(errors) == 0 {
+		_article := article.Article{
+			Title: title,
+			Body:  body,
+		}
+		_article.Create()
+
+		if _article.ID > 0 {
+			fmt.Fprint(w, "插入成功，ID 为"+strconv.FormatInt(int64(_article.ID), 10))
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "500 服务器内部错误")
+		}
+	} else {
+		storeUrl := route.Name2URL("articles.store")
+
+		data := ArticlesStoreData{
+			Title:  title,
+			Body:   body,
+			URL:    storeUrl,
+			Errors: errors,
+		}
+		tmpl, err := template.ParseFiles("resources/views/articles/create.gohtml")
+		if err != nil {
+			panic(err)
+		}
+		tmpl.Execute(w, data)
+	}
 }
 
 func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
