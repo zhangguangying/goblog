@@ -2,12 +2,10 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/zhangguangying/goblog/bootstrap"
 	"github.com/zhangguangying/goblog/pkg/database"
-	"github.com/zhangguangying/goblog/pkg/logger"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -69,41 +67,9 @@ func main() {
 	bootstrap.SetDB()
 	router = bootstrap.SetupRoute()
 
-	router.HandleFunc("/articles/{id:[0-9]+}/delete", articlesDeleteHandler).Methods("POST").Name("articles.delete")
-
 	router.Use(forceHTMLMiddleware)
 
 	http.ListenAndServe(":3000", removeTrailingSlash(router))
-}
-
-func articlesDeleteHandler(writer http.ResponseWriter, request *http.Request) {
-	id := getRouteVariable("id", request)
-	article, err := getArticleById(id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			writer.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(writer, "404 文章未找到")
-		} else {
-			logger.LogError(err)
-			writer.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(writer, "500 服务器内部错误")
-		}
-	} else {
-		rowsAffect, err := article.Delete()
-		if err != nil {
-			logger.LogError(err)
-			writer.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(writer, "500 服务器内部错误")
-		} else {
-			if rowsAffect > 0 {
-				indexUrl, _ := router.Get("articles.index").URL()
-				http.Redirect(writer, request, indexUrl.String(), http.StatusFound)
-			} else {
-				writer.WriteHeader(http.StatusNotFound)
-				fmt.Fprintf(writer, "404 文章未找到")
-			}
-		}
-	}
 }
 
 func getRouteVariable(parameterName string, r *http.Request) string {
