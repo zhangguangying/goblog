@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"github.com/zhangguangying/goblog/app/models/article"
+	"github.com/zhangguangying/goblog/pkg/logger"
 	"github.com/zhangguangying/goblog/pkg/route"
 	"github.com/zhangguangying/goblog/pkg/types"
 	"gorm.io/gorm"
@@ -37,4 +38,20 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl.Execute(w, article)
 	}
+}
+
+func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
+	articles, err := article.GetAll()
+	if err != nil {
+		logger.LogError(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "500 服务器内部错误")
+	} else {
+		tmpl, err := template.ParseFiles("resources/views/articles/index.gohtml")
+		if err != nil {
+			logger.LogError(err)
+		}
+		tmpl.Execute(w, articles)
+	}
+
 }

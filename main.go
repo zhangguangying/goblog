@@ -25,15 +25,6 @@ type Article struct {
 	ID          int64
 }
 
-func (a Article) Link() string {
-	showUrl, err := router.Get("articles.show").URL("id", strconv.FormatInt(a.ID, 10))
-	if err != nil {
-		logger.LogError(err)
-		return ""
-	}
-	return showUrl.String()
-}
-
 func (a Article) Delete() (rowsAffect int64, err error) {
 	rs, err := db.Exec("delete from articles where id = " + strconv.FormatInt(a.ID, 10))
 	if err != nil {
@@ -271,7 +262,6 @@ func main() {
 	bootstrap.SetDB()
 	router = bootstrap.SetupRoute()
 
-	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
 	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
 	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
 	router.HandleFunc("/articles/{id:[0-9]+}/edit", articlesEditHandler).Methods("GET").Name("articles.edit")
