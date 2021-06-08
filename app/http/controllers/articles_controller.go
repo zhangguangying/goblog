@@ -6,13 +6,13 @@ import (
 	"github.com/zhangguangying/goblog/app/models/article"
 	"github.com/zhangguangying/goblog/pkg/logger"
 	"github.com/zhangguangying/goblog/pkg/route"
-	"github.com/zhangguangying/goblog/pkg/types"
 	"gorm.io/gorm"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -23,6 +23,21 @@ type ArticlesStoreData struct {
 	Title, Body string
 	URL         string
 	Errors      map[string]string
+}
+
+func Render(w http.ResponseWriter, name string, data interface{}) {
+	viewDir := "resources/views/"
+	name = strings.Replace(name, ".", "/", -1)
+	files, err := filepath.Glob(viewDir + "layouts/*.gohtml")
+	logger.LogError(err)
+	files = append(files, viewDir+name+".gohtml")
+	tmpl, err := template.New(name + ".gohtml").
+		Funcs(template.FuncMap{
+			"RouteName2URL": route.Name2URL,
+		}).ParseFiles(files...)
+	logger.LogError(err)
+
+	tmpl.ExecuteTemplate(w, "app", data)
 }
 
 func (*ArticlesController) Delete(w http.ResponseWriter, r *http.Request) {
@@ -215,19 +230,7 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "服务器内部错误")
 		}
 	} else {
-		viewDir := "resources/views"
-		files, err := filepath.Glob(viewDir + "/layouts/*.gohtml")
-		logger.LogError(err)
-		files = append(files, viewDir+"/articles/show.gohtml")
-		tmpl, err := template.New("show.gohtml").Funcs(template.FuncMap{
-			"RouteName2URL": route.Name2URL,
-			"Int64ToString": types.Int64ToString,
-		}).
-			ParseFiles(files...)
-		if err != nil {
-			log.Fatal(err)
-		}
-		tmpl.ExecuteTemplate(w, "app", _article)
+		Render(w, "articles.show", _article)
 	}
 }
 
@@ -238,15 +241,7 @@ func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "500 服务器内部错误")
 	} else {
-		viewDir := "resources/views"
-		files, err := filepath.Glob(viewDir + "/layouts/*.gohtml")
-		logger.LogError(err)
-		files = append(files, viewDir+"/articles/index.gohtml")
-		tmpl, err := template.ParseFiles(files...)
-		if err != nil {
-			logger.LogError(err)
-		}
-		tmpl.ExecuteTemplate(w, "app", articles)
+		Render(w, "articles.index", articles)
 	}
 
 }
