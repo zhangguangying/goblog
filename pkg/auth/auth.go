@@ -31,7 +31,7 @@ func Attempt(email, password string) error {
 	_user, err := user.GetByEmail(email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return errors.New("账号不存在或密码错误")
+			return errors.New("账号不存在")
 		} else {
 			return errors.New("内部错误，请稍后重试")
 		}

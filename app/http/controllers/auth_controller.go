@@ -33,7 +33,8 @@ func (*AuthController) DoRegister(w http.ResponseWriter, r *http.Request) {
 	} else {
 		_user.Create()
 		if _user.ID > 0 {
-			fmt.Fprintf(w, "创建用户成功，ID为：", _user.GetStringId())
+			auth.Login(_user)
+			http.Redirect(w, r, "/", http.StatusFound)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "500 服务器内部错误")
