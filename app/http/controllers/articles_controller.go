@@ -17,12 +17,6 @@ import (
 type ArticlesController struct {
 }
 
-type ArticlesStoreData struct {
-	Title, Body string
-	URL         string
-	Errors      map[string]string
-}
-
 func (*ArticlesController) Delete(w http.ResponseWriter, r *http.Request) {
 	id := route.GetRouteVariable("id", r)
 	_article, err := article.Get(id)
@@ -87,10 +81,10 @@ func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprint(w, "您没有做任何更改")
 			}
 		} else {
-			data := ArticlesStoreData{
-				Title:  _article.Title,
-				Body:   _article.Body,
-				Errors: errors,
+			data := view.D{
+				"Title":  _article.Title,
+				"Body":   _article.Body,
+				"Errors": errors,
 			}
 			view.Render(w, data, "articles.edit", "articles._form_field")
 		}
@@ -112,18 +106,18 @@ func (*ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		url := route.Name2URL("articles.update", "id", id)
-		data := ArticlesStoreData{
-			Title:  article.Title,
-			Body:   article.Body,
-			URL:    url,
-			Errors: nil,
+		data := view.D{
+			"Title":  article.Title,
+			"Body":   article.Body,
+			"URL":    url,
+			"Errors": nil,
 		}
 		view.Render(w, data, "articles.edit", "articles._form_field")
 	}
 }
 
 func (*ArticlesController) Create(w http.ResponseWriter, r *http.Request) {
-	view.Render(w, ArticlesStoreData{}, "articles.create", "articles._form_field")
+	view.Render(w, view.D{}, "articles.create", "articles._form_field")
 }
 
 func validateArticleFormData(title, body string) map[string]string {
@@ -163,10 +157,10 @@ func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "500 服务器内部错误")
 		}
 	} else {
-		data := ArticlesStoreData{
-			Title:  title,
-			Body:   body,
-			Errors: errors,
+		data := view.D{
+			"Title":  title,
+			"Body":   body,
+			"Errors": errors,
 		}
 		view.Render(w, data, "articles.create", "articles._form_field")
 	}
