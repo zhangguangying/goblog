@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	bootstrap.SetDB()
+	bootstrap.SetupDB()
 	router := bootstrap.SetupRoute()
 
 	http.ListenAndServe(":3000", middlewares.RemoveTrailingSlash(router))
