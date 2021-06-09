@@ -10,3 +10,7 @@ type User struct {
 	Password        string `gorm:"column:password;type:varchar(255)" valid:"password"`
 	PasswordConfirm string `gorm:"-" valid:"password_confirm"`
 }
+
+func (u *User) ComparePassword(password string) bool {
+	return u.Password == password
+}
