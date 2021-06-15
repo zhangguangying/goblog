@@ -197,12 +197,15 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
-	articles, err := article.GetAll()
+	articles, pageData, err := article.GetAll(r, 2)
 	if err != nil {
 		logger.LogError(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "500 服务器内部错误")
 	} else {
-		view.Render(w, view.D{"Articles": articles}, "articles.index", "articles._article_meta")
+		view.Render(w, view.D{
+			"Articles":  articles,
+			"PagerData": pageData,
+		}, "articles.index", "articles._article_meta")
 	}
 }
