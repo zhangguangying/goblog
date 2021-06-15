@@ -197,7 +197,7 @@ func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
-	articles, pageData, err := article.GetAll(r, 2)
+	articles, pageData, err := article.GetAll(r, 10)
 	if err != nil {
 		logger.LogError(err)
 		w.WriteHeader(http.StatusInternalServerError)
