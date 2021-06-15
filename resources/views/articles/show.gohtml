@@ -11,7 +11,6 @@
 
       <hr>
       {{ .Article.Body }}
-
       {{/* 构建删除按钮  */}}
       <form class="mt-4" action="{{ RouteName2URL "articles.delete" "id" .Article.GetStringID }}" method="post">
         <button type="submit" onclick="return confirm('删除动作不可逆，请确定是否继续')" class="btn btn-outline-danger btn-sm">删除</button>

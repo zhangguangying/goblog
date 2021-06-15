@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"net/http"
-	"strconv"
 	"unicode/utf8"
 )
 
@@ -165,7 +164,8 @@ func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 		_article.Create()
 
 		if _article.ID > 0 {
-			fmt.Fprint(w, "插入成功，ID 为"+strconv.FormatInt(int64(_article.ID), 10))
+			flash.Success("创建成功")
+			http.Redirect(w, r, route.Name2URL("articles.show", "id", _article.GetStringId()), http.StatusFound)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(w, "500 服务器内部错误")
