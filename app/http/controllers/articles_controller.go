@@ -6,6 +6,7 @@ import (
 	"github.com/zhangguangying/goblog/app/models/article"
 	"github.com/zhangguangying/goblog/app/policies"
 	"github.com/zhangguangying/goblog/app/requests"
+	"github.com/zhangguangying/goblog/pkg/auth"
 	"github.com/zhangguangying/goblog/pkg/flash"
 	"github.com/zhangguangying/goblog/pkg/logger"
 	"github.com/zhangguangying/goblog/pkg/route"
@@ -153,8 +154,9 @@ func validateArticleFormData(title, body string) map[string]string {
 
 func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 	_article := article.Article{
-		Title: r.PostFormValue("title"),
-		Body:  r.PostFormValue("body"),
+		Title:  r.PostFormValue("title"),
+		Body:   r.PostFormValue("body"),
+		UserID: auth.User().ID,
 	}
 
 	errors := requests.ValidatorArticleForm(_article)
