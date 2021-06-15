@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/zhangguangying/goblog/app/models/article"
+	"github.com/zhangguangying/goblog/app/requests"
 	"github.com/zhangguangying/goblog/pkg/logger"
 	"github.com/zhangguangying/goblog/pkg/route"
 	"github.com/zhangguangying/goblog/pkg/view"
@@ -60,14 +61,11 @@ func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "500 服务器内部错误")
 		}
 	} else {
-		title := r.PostFormValue("title")
-		body := r.PostFormValue("body")
-		errors := validateArticleFormData(title, body)
+		_article.Title = r.PostFormValue("title")
+		_article.Body = r.PostFormValue("body")
+		errors := requests.ValidatorArticleForm(_article)
 
 		if len(errors) == 0 {
-			_article.Title = title
-			_article.Body = body
-
 			rs, err := _article.Update()
 			if err != nil {
 				logger.LogError(err)
@@ -82,9 +80,8 @@ func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			data := view.D{
-				"Title":  _article.Title,
-				"Body":   _article.Body,
-				"Errors": errors,
+				"Article": _article,
+				"Errors":  errors,
 			}
 			view.Render(w, data, "articles.edit", "articles._form_field")
 		}
@@ -107,10 +104,9 @@ func (*ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
 	} else {
 		url := route.Name2URL("articles.update", "id", id)
 		data := view.D{
-			"Title":  article.Title,
-			"Body":   article.Body,
-			"URL":    url,
-			"Errors": nil,
+			"Article": article,
+			"URL":     url,
+			"Errors":  view.D{},
 		}
 		view.Render(w, data, "articles.edit", "articles._form_field")
 	}
@@ -138,16 +134,14 @@ func validateArticleFormData(title, body string) map[string]string {
 }
 
 func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
-	title := r.PostFormValue("title")
-	body := r.PostFormValue("body")
+	_article := article.Article{
+		Title: r.PostFormValue("title"),
+		Body:  r.PostFormValue("body"),
+	}
 
-	errors := validateArticleFormData(title, body)
-
+	errors := requests.ValidatorArticleForm(_article)
+	fmt.Println(errors)
 	if len(errors) == 0 {
-		_article := article.Article{
-			Title: title,
-			Body:  body,
-		}
 		_article.Create()
 
 		if _article.ID > 0 {
@@ -158,9 +152,8 @@ func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		data := view.D{
-			"Title":  title,
-			"Body":   body,
-			"Errors": errors,
+			"Article": _article,
+			"Errors":  errors,
 		}
 		view.Render(w, data, "articles.create", "articles._form_field")
 	}

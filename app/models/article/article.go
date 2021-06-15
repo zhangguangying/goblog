@@ -7,8 +7,8 @@ import (
 
 type Article struct {
 	models.BaseModel
-	Title string
-	Body  string
+	Title string `valid:"title"`
+	Body  string `valid:"body"`
 }
 
 func (a Article) Link() string {
