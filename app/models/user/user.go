@@ -19,6 +19,6 @@ func (u *User) ComparePassword(pass string) bool {
 	return password.CheckHash(u.Password, pass)
 }
 
-func (u *User) Link() string {
+func (u User) Link() string {
 	return route.Name2URL("users.show", "id", u.GetStringId())
 }
