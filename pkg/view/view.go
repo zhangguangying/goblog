@@ -1,6 +1,7 @@
 package view
 
 import (
+	"github.com/zhangguangying/goblog/app/models/category"
 	"github.com/zhangguangying/goblog/pkg/auth"
 	"github.com/zhangguangying/goblog/pkg/flash"
 	"github.com/zhangguangying/goblog/pkg/logger"
@@ -25,6 +26,7 @@ func RenderTemplate(w http.ResponseWriter, name string, data D, tplFiles ...stri
 	data["isLogined"] = auth.Check()
 	data["loginUser"] = auth.User()
 	data["flash"] = flash.All()
+	data["Categories"], _ = category.All()
 
 	files := getTemplateFiles(tplFiles...)
 	tmpl, err := template.New("").
