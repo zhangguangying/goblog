@@ -27,7 +27,7 @@
     <div class="p-4 bg-white rounded shadow-sm mb-3">
       <h5>链接</h5>
       <ol class="list-unstyled">
-        <li><a href="#">关于我们</a></li>
+        <li><a href="{{ RouteName2URL "about" }}">关于我们</a></li>
         {{ if .isLogined }}
           <li><a href="{{ RouteName2URL "articles.create" }}">开始写作</a></li>
           <li class="mt-3">
