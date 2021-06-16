@@ -2,9 +2,12 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/zhangguangying/goblog/app/models/article"
 	"github.com/zhangguangying/goblog/app/models/category"
 	"github.com/zhangguangying/goblog/app/requests"
+	"github.com/zhangguangying/goblog/pkg/route"
 	"github.com/zhangguangying/goblog/pkg/view"
+	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -44,6 +47,28 @@ func (*CategoryController) Store(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (*CategoryController) Show(w http.ResponseWriter, r *http.Request) {
+func (cc *CategoryController) Show(w http.ResponseWriter, r *http.Request) {
+	// 1. 获取 URL 参数
+	id := route.GetRouteVariable("id", r)
 
+	// 2. 读取对应的数据
+	_category, err := category.Get(id)
+
+	// 3. 获取结果集
+	articles, pagerData, err := article.GetByCategoryID(_category.GetStringId(), r, 10)
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "记录不存在")
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "服务器内部错误")
+		}
+	} else {
+		view.Render(w, view.D{
+			"Articles":  articles,
+			"PagerData": pagerData,
+		}, "articles.index", "articles._article_meta")
+	}
 }
