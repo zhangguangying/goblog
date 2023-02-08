@@ -30,7 +30,11 @@ func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "访问文章列表")
 }
 func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "创建一篇文章")
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprint(w, "请输入正确的内容")
+		return
+	}
+	fmt.Fprintf(w, "POSTForm 的内容：%v", r.PostForm)
 }
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
