@@ -38,6 +38,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "访问文章列表")
 }
+
 func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.PostFormValue("title")
 	body := r.PostFormValue("body")
@@ -63,28 +64,6 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "body 的值为: %v <br>", body)
 		fmt.Fprintf(w, "body 的长度为: %v <br>", len(body))
 	} else {
-		html := `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>创建文章 —— 我的技术博客</title>
-    <style type="text/css">.error {color: red;}</style>
-</head>
-<body>
-    <form action="{{ .URL }}" method="post">
-        <p><input type="text" name="title" value="{{ .Title }}"></p>
-        {{ with .Errors.title }}
-        <p class="error">{{ . }}</p>
-        {{ end }}
-        <p><textarea name="body" cols="30" rows="10">{{ .Body }}</textarea></p>
-        {{ with .Errors.body }}
-        <p class="error">{{ . }}</p>
-        {{ end }}
-        <p><button type="submit">提交</button></p>
-    </form>
-</body>
-</html>
-		`
 		storeUrl, _ := router.Get("articles.store").URL()
 
 		data := ArticleFormData{
@@ -93,7 +72,7 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 			URL:    storeUrl,
 			Errors: errors,
 		}
-		tmpl, err := template.New("create-form").Parse(html)
+		tmpl, err := template.ParseFiles("resources/views/articles/create.html")
 		if err != nil {
 			panic(err)
 		}
@@ -127,26 +106,23 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 }
 
 func articlesCreateHandler(w http.ResponseWriter, r *http.Request) {
-	html := `
-	<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <form action="%s" method="post">
-		<p><input type="text" name="title"></p>
-		<p><textarea name="body" id="" cols="30" rows="10"></textarea></p>
-		<input type="submit" value="提交">
-    </form>
-</body>
-</html>
-	`
 	postUrl, _ := router.Get("articles.store").URL()
-	fmt.Fprintf(w, html, postUrl)
+
+	data := ArticleFormData{
+		Title:  "",
+		Body:   "",
+		URL:    postUrl,
+		Errors: nil,
+	}
+
+	tpl, err := template.ParseFiles("resources/views/articles/create.html")
+	if err != nil {
+		panic(err)
+	}
+	err = tpl.Execute(w, data)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
