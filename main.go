@@ -9,6 +9,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/mux"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var router = mux.NewRouter()
