@@ -42,7 +42,26 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "访问文章列表")
+	rows, err := db.Query("SELECT * FROM articles")
+	checkError(err)
+	defer rows.Close()
+
+	var articles []Article
+	for rows.Next() {
+		var article Article
+		err := rows.Scan(&article.ID, &article.Title, &article.Body)
+		checkError(err)
+		articles = append(articles, article)
+	}
+
+	err = rows.Err()
+	checkError(err)
+
+	tpl, err := template.ParseFiles("resources/views/articles/index.html")
+	checkError(err)
+
+	err = tpl.Execute(w, articles)
+	checkError(err)
 }
 
 func saveArticlesToDB(title, body string) (int64, error) {
