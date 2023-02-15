@@ -114,10 +114,34 @@ func articlesStoreHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+type Article struct {
+	Title, Body string
+	ID          int64
+}
+
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprint(w, "文章ID:"+id)
+
+	query := "SELECT * FROM articles WHERE id = ?"
+	article := Article{}
+	err := db.QueryRow(query, id).Scan(&article.ID, &article.Title, &article.Body)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "404 文章未找到")
+		} else {
+			checkError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "500 服务器内部错误")
+		}
+	} else {
+		tpl, err := template.ParseFiles("resources/views/articles/show.html")
+		checkError(err)
+		tpl.Execute(w, article)
+		checkError(err)
+	}
 }
 
 func forceHTMLMiddleware(handler http.Handler) http.Handler {
