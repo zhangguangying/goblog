@@ -127,6 +127,15 @@ type Article struct {
 	ID          int64
 }
 
+func (a *Article) Link() string {
+	showUrl, err := router.Get("articles.show").URL("id", strconv.FormatInt(a.ID, 10))
+	if err != nil {
+		checkError(err)
+		return ""
+	}
+	return showUrl.String()
+}
+
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	id := getRouteVariable("id", r)
 
