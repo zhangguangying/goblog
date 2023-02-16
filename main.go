@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"goblog/pkg/route"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,8 +17,8 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
-var router = mux.NewRouter()
 var db *sql.DB
+var router *mux.Router
 
 type ArticleFormData struct {
 	Body, Title string
@@ -163,7 +164,7 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tpl, err := template.New("show.html").
 			Funcs(template.FuncMap{
-				"RouteName2URL": RouteName2URL,
+				"RouteName2URL": route.Name2URL,
 				"Int64ToString": Int64ToString,
 			}).
 			ParseFiles("resources/views/articles/show.html")
@@ -173,15 +174,6 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func RouteName2URL(routeName string, pairs ...string) string {
-	url, err := router.Get(routeName).URL(pairs...)
-	if err != nil {
-		checkError(err)
-		return ""
-	}
-
-	return url.String()
-}
 func Int64ToString(num int64) string {
 	return strconv.FormatInt(num, 10)
 }
@@ -407,6 +399,8 @@ func main() {
 	initDB()
 	createTables()
 
+	route.Initialize()
+	router = route.Router
 	router.HandleFunc("/", homeHandler).Name("home")
 	router.HandleFunc("/about", aboutHandler)
 
