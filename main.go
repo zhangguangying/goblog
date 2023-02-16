@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"goblog/pkg/logger"
 	"goblog/pkg/route"
+	"goblog/pkg/types"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -166,17 +167,13 @@ func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 		tpl, err := template.New("show.html").
 			Funcs(template.FuncMap{
 				"RouteName2URL": route.Name2URL,
-				"Int64ToString": Int64ToString,
+				"Int64ToString": types.Int64ToString,
 			}).
 			ParseFiles("resources/views/articles/show.html")
 		logger.LogError(err)
 		tpl.Execute(w, article)
 		logger.LogError(err)
 	}
-}
-
-func Int64ToString(num int64) string {
-	return strconv.FormatInt(num, 10)
 }
 
 func forceHTMLMiddleware(handler http.Handler) http.Handler {
