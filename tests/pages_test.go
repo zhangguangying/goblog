@@ -42,5 +42,4 @@ func TestAllPages(t *testing.T) {
 		assert.NoError(t, err, "请求 "+test.url+" 时报错")
 		assert.Equal(t, test.expected, resp.StatusCode, test.url+" 应返回状态码"+strconv.Itoa(test.expected))
 	}
-
 }

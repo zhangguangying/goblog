@@ -3,10 +3,10 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"goblog/bootstrap"
 	"goblog/pkg/database"
 	"goblog/pkg/logger"
 	"goblog/pkg/route"
-	"goblog/pkg/types"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -130,32 +130,6 @@ func (a Article) Delete() (int64, error) {
 		return n, nil
 	}
 	return 0, nil
-}
-
-func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
-	id := route.GetRouteVariable("id", r)
-
-	article, err := getArticleByID(id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "404 文章未找到")
-		} else {
-			logger.LogError(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "500 服务器内部错误")
-		}
-	} else {
-		tpl, err := template.New("show.html").
-			Funcs(template.FuncMap{
-				"RouteName2URL": route.Name2URL,
-				"Int64ToString": types.Int64ToString,
-			}).
-			ParseFiles("resources/views/articles/show.html")
-		logger.LogError(err)
-		tpl.Execute(w, article)
-		logger.LogError(err)
-	}
 }
 
 func forceHTMLMiddleware(handler http.Handler) http.Handler {
@@ -334,12 +308,10 @@ func main() {
 	database.Initialize()
 	db = database.DB
 
-	route.Initialize()
-	router = route.Router
+	router = bootstrap.SetupRouter()
 
 	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
 	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
-	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
 	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
 	router.HandleFunc("/articles/{id:[0-9]}/edit", articlesEditHandler).Methods("GET").Name("articles.edit")
 	router.HandleFunc("/articles/{id:[0-9]}", articlesUpdateHandler).Methods("POST").Name("articles.update")
