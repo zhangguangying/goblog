@@ -26,29 +26,6 @@ type ArticleFormData struct {
 	Errors      map[string]string
 }
 
-func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT * FROM articles")
-	logger.LogError(err)
-	defer rows.Close()
-
-	var articles []Article
-	for rows.Next() {
-		var article Article
-		err := rows.Scan(&article.ID, &article.Title, &article.Body)
-		logger.LogError(err)
-		articles = append(articles, article)
-	}
-
-	err = rows.Err()
-	logger.LogError(err)
-
-	tpl, err := template.ParseFiles("resources/views/articles/index.html")
-	logger.LogError(err)
-
-	err = tpl.Execute(w, articles)
-	logger.LogError(err)
-}
-
 func saveArticlesToDB(title, body string) (int64, error) {
 	var (
 		id   int64
@@ -311,7 +288,6 @@ func main() {
 	bootstrap.SetupDB()
 	router = bootstrap.SetupRouter()
 
-	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
 	router.HandleFunc("/articles", articlesStoreHandler).Methods("POST").Name("articles.store")
 	router.HandleFunc("/articles/create", articlesCreateHandler).Methods("GET").Name("articles.create")
 	router.HandleFunc("/articles/{id:[0-9]}/edit", articlesEditHandler).Methods("GET").Name("articles.edit")
