@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 type ArticlesController struct {
@@ -122,6 +123,89 @@ func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
 		err = tmpl.Execute(w, data)
 		if err != nil {
 			panic(err)
+		}
+	}
+}
+
+func (*ArticlesController) Edit(w http.ResponseWriter, r *http.Request) {
+	id := route.GetRouteVariable("id", r)
+	article, err := article.Get(id)
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "404 记录不存在")
+		} else {
+			logger.LogError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "500 服务器内部错误")
+		}
+	} else {
+		tpl, err := template.ParseFiles("resources/views/articles/edit.html")
+		logger.LogError(err)
+
+		url := route.Name2URL("articles.update", "id", id)
+		data := ArticleFormData{
+			Title:  article.Title,
+			Body:   article.Body,
+			URL:    url,
+			Errors: nil,
+		}
+		err = tpl.Execute(w, data)
+		logger.LogError(err)
+	}
+}
+
+func (*ArticlesController) Update(w http.ResponseWriter, r *http.Request) {
+	id := route.GetRouteVariable("id", r)
+	_article, err := article.Get(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "404 记录不存在")
+		} else {
+			logger.LogError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "500 服务器内部错误")
+		}
+	} else {
+		title := r.PostFormValue("title")
+		body := r.PostFormValue("body")
+
+		errors := validateArticleFormData(title, body)
+
+		if len(errors) == 0 {
+			_article.Title = title
+			_article.Body = body
+			rowsAffected, err := _article.Update()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "500 服务器内部错误")
+			}
+			if rowsAffected > 0 {
+				showUrl := route.Name2URL("articles.show", "id", id)
+				http.Redirect(w, r, showUrl, http.StatusFound)
+			} else {
+				fmt.Fprint(w, "您没有做任何更改！")
+			}
+		} else {
+			updateUrl := route.Name2URL("articles.update", "id", id)
+
+			data := ArticleFormData{
+				Title:  title,
+				Body:   body,
+				URL:    updateUrl,
+				Errors: errors,
+			}
+			tmpl, err := template.ParseFiles("resources/views/articles/edit.html")
+			if err != nil {
+				panic(err)
+			}
+
+			err = tmpl.Execute(w, data)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 }

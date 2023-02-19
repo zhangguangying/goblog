@@ -42,3 +42,12 @@ func (article *Article) Create() error {
 	}
 	return nil
 }
+
+func (article *Article) Update() (int64, error) {
+	result := model.DB.Save(&article)
+	if err := result.Error; err != nil {
+		logger.LogError(err)
+		return 0, err
+	}
+	return result.RowsAffected, nil
+}
