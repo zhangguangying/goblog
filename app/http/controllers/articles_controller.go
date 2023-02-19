@@ -9,11 +9,19 @@ import (
 	"goblog/pkg/types"
 	"html/template"
 	"net/http"
+	"strconv"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 )
 
 type ArticlesController struct {
+}
+
+type ArticleFormData struct {
+	Body, Title string
+	URL         string
+	Errors      map[string]string
 }
 
 func (*ArticlesController) Show(w http.ResponseWriter, r *http.Request) {
@@ -56,4 +64,81 @@ func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
 		err = tpl.Execute(w, articles)
 		logger.LogError(err)
 	}
+}
+
+func (*ArticlesController) Create(w http.ResponseWriter, r *http.Request) {
+	postUrl := route.Name2URL("articles.store")
+
+	data := ArticleFormData{
+		Title:  "",
+		Body:   "",
+		URL:    postUrl,
+		Errors: nil,
+	}
+
+	tpl, err := template.ParseFiles("resources/views/articles/create.html")
+	if err != nil {
+		panic(err)
+	}
+	err = tpl.Execute(w, data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (*ArticlesController) Store(w http.ResponseWriter, r *http.Request) {
+	title := r.PostFormValue("title")
+	body := r.PostFormValue("body")
+
+	errors := validateArticleFormData(title, body)
+
+	if len(errors) == 0 {
+		_article := article.Article{
+			Title: title,
+			Body:  body,
+		}
+		err := _article.Create()
+		if _article.ID > 0 {
+			fmt.Fprint(w, "插入成功, ID为"+strconv.FormatUint(_article.ID, 10))
+		} else {
+			logger.LogError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "500 服务器内部错误")
+		}
+	} else {
+		storeUrl := route.Name2URL("articles.store")
+
+		data := ArticleFormData{
+			Title:  title,
+			Body:   body,
+			URL:    storeUrl,
+			Errors: errors,
+		}
+		tmpl, err := template.ParseFiles("resources/views/articles/create.html")
+		if err != nil {
+			panic(err)
+		}
+
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func validateArticleFormData(title, body string) map[string]string {
+	errors := make(map[string]string)
+
+	if title == "" {
+		errors["title"] = "标题不能为空"
+	} else if utf8.RuneCountInString(title) < 3 || utf8.RuneCountInString(title) > 40 {
+		errors["title"] = "标题长度介于3-40"
+	}
+
+	if body == "" {
+		errors["body"] = "内容不能为空"
+	} else if utf8.RuneCountInString(body) < 10 {
+		errors["body"] = "内容长度需大于或等于 10 个字节"
+	}
+	return errors
 }
