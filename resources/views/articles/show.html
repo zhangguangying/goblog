@@ -1,19 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Title }} - 我的技术博客</title>
-</head>
-<body>
-    <p>ID: {{ .ID }}</p>
-    <p>标题：{{ .Title }}</p>
-    <p>内容：{{ .Body }}</p>
+{{ define "title" }}
+{{ .Title }}
+{{ end }}
 
-    {{ $idString := UInt64ToString .ID  }}
-    <form action="{{ RouteName2URL "articles.delete" "id" $idString }}" method="post">
-        <button type="submit" onclick="return confirm('删除动作不可逆，请确定是否继续')">删除</button>
-    </form>
-</body>
-</html>
+{{ define "main" }}
+<div class="col-md-9 blog-main">
+    <div class="blog-post bg-white p-5 rounded shadow mb-4">
+        <div class="blog-post-title">{{ .Title }}</div>
+        <p class="blog-post-meta text-secondary">
+            发布于 <a href="" class="font-weight-bold">2020-09-05</a> by <a href="" class="font-weight-bold">Summer</a>
+        </p>
+        <br>
+        {{ .Body }}
+
+        {{ $idString := UInt64ToString .ID  }}
+        <form action="{{ RouteName2URL "articles.delete" "id" $idString }}" class="mt-4" method="post">
+            <button type="submit" onclick="return confirm('删除动作不可逆，请确定是否继续')">删除</button>
+        </form>
+    </div>
+</div>
+{{ end }}
