@@ -19,6 +19,7 @@ func main() {
 	db = database.DB
 
 	bootstrap.SetupDB()
+
 	router = bootstrap.SetupRouter()
 
 	err := http.ListenAndServe(":3000", middlewares.RemoveTrailingSlash(router))
