@@ -9,6 +9,7 @@ import (
 	"goblog/pkg/types"
 	"html/template"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"unicode/utf8"
 
@@ -59,10 +60,15 @@ func (*ArticlesController) Index(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, "500 服务器内部错误")
 	} else {
-		tpl, err := template.ParseFiles("resources/views/articles/index.html")
+		viewDir := "resources/views"
+		files, err := filepath.Glob(viewDir + "/layouts/*.html")
+		logger.LogError(err)
+		newFiles := append(files, viewDir+"/articles/index.html")
+
+		tpl, err := template.ParseFiles(newFiles...)
 		logger.LogError(err)
 
-		err = tpl.Execute(w, articles)
+		err = tpl.ExecuteTemplate(w, "app", articles)
 		logger.LogError(err)
 	}
 }
