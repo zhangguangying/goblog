@@ -1,6 +1,7 @@
 package article
 
 import (
+	"goblog/app/models"
 	"goblog/pkg/logger"
 	"goblog/pkg/model"
 	"goblog/pkg/route"
@@ -9,6 +10,8 @@ import (
 )
 
 type Article struct {
+	models.BaseModel
+
 	ID          uint64
 	Title, Body string
 }
