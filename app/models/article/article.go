@@ -12,7 +12,6 @@ import (
 type Article struct {
 	models.BaseModel
 
-	ID          uint64
 	Title, Body string
 }
 
