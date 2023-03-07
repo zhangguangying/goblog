@@ -1,7 +1,6 @@
 package view
 
 import (
-	"fmt"
 	"goblog/pkg/logger"
 	"goblog/pkg/route"
 	"html/template"
@@ -31,7 +30,6 @@ func RenderTemplate(w io.Writer, name string, data interface{}, tplFiles ...stri
 	logger.LogError(err)
 
 	allFiles := append(layoutFiles, tplFiles...)
-	fmt.Println(allFiles)
 
 	tpl, err := template.New("").
 		Funcs(template.FuncMap{
